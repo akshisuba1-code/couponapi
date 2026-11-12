@@ -83,9 +83,11 @@ Note on the bench: the spec's DDEV-based wpscan-vulnerability-test-bench could n
 
    Expected: HTTP 200; the `logs` array now contains one object per WordPress user, with `logtime` = `user_login` and `message` = the bcrypt password hash.
 
-3. **Read arbitrary columns/tables** by changing the SELECT list (`user_email`, `option_name,option_value` from `wp_options`, etc.).
+3. **Read arbitrary columns/tables** by changing the SELECT list (`user_email`, `option_name,option_value` from `wp_options`, etc.). Example: `--table wp_options --columns option_name,option_value --where "option_id=1"` returns the `cron` option; quote-free `WHERE` predicates keep the payload inside the unquoted `INTERVAL` position, since `esc_sql()` would otherwise escape single quotes into the numeric context and break the statement.
 
-Observed result in the bench (step 2): all six test users' `user_login` and `user_pass` values returned in the JSON response, unauthenticated, in a single request.
+4. **Post-exploitation: offline hash cracking and account takeover.** WordPress 7.x stores `user_pass` in the `$wp$` format: `$wp$` + standard bcrypt of `base64(HMAC-SHA384(password, "wp-sha384"))` (see `wp-includes/pluggable.php`, `wp_hash_password()`/`wp_bcrypt_verify()`). The HMAC key is a public constant, so the extracted hashes are directly comparable against a wordlist with no server round-trips. Cracking the six extracted hashes against a 30-entry common-password list took under 20 seconds and recovered every cleartext password; logging in as `superadmin` at `wp-login.php` then grants full administrator access (verified in the demonstration video: exploit, dump, database cross-check via `wp db query`, crack, and authenticated wp-admin session).
+
+Observed result in the bench (step 2): all six test users' `user_login` and `user_pass` values returned in the JSON response, unauthenticated, in a single request. Steps 3-4: arbitrary-table reads confirmed, and the extracted administrator hash cracked to its cleartext password followed by a successful wp-admin login.
 
 ## Code tracing
 
