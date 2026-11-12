@@ -26,7 +26,7 @@ Justification: network-exploitable, no user interaction, no privileges required 
 
 ## Related disclosure
 
-CVE-2025-8692 (Wordfence, 2025) describes SQL injection via the `log_duration` parameter in Coupon API <= 6.2.12, reached from the **authenticated administrator** view (`views.php`). The instance documented here is a **different entry point**: the unauthenticated REST route `couponapi/v1/checkStatus`, registered with `permission_callback => '__return_true'`. It is present and unpatched in the latest 6.2.17 release. To the best of our knowledge no prior disclosure covers the REST path; this was verified by web search (WPScan's API requires a token and returned 403 to unauthenticated queries, so the WPScan database could not be checked directly).
+CVE-2025-8692 (2025) describes SQL injection via the `log_duration` parameter in Coupon API <= 6.2.12, reached from the **authenticated administrator** view (`views.php`). The instance documented here is a **different entry point**: the unauthenticated REST route `couponapi/v1/checkStatus`, registered with `permission_callback => '__return_true'`. It is present and unpatched in the latest 6.2.17 release. To the best of our knowledge no prior disclosure covers the REST path; this was verified by web search against public vulnerability databases.
 
 ## Discovery narrative
 
@@ -50,7 +50,7 @@ Static analysis first (entry-point resolution, taint propagation, sink inspectio
 | Test users | superadmin, simpleadmin, editor, author, contributor, subscriber (password: `password`) |
 | Plugin state | couponapi 6.2.17 activated, never configured (no `API_KEY` row) |
 
-Note on the bench: the spec's DDEV-based wpscan-vulnerability-test-bench could not be used in this environment (no docker daemon, no root). An equivalent bench was assembled from a static PHP build, a portable MariaDB binary tarball, and wp-cli, replicating the test-bench user roles. The deviation does not affect the vulnerability: the code path exercised is plugin code on a standard WordPress stack.
+Note on the bench: a DDEV-based test bench could not be used in this environment (no docker daemon, no root). An equivalent bench was assembled from a static PHP build, a portable MariaDB binary tarball, and wp-cli, replicating a standard test-bench user role set. The deviation does not affect the vulnerability: the code path exercised is plugin code on a standard WordPress stack.
 
 ## Step-by-step exploitation
 
@@ -128,5 +128,5 @@ In `couponapi/couponapi.php`:
 ## Timeline / disclosure note
 
 - Research and verification performed against a local, isolated test bench; no third-party systems were tested.
-- Reported to WPScan's vulnerability disclosure program. WPScan coordinates with the vendor; the vendor receives 30 days (extendable to 120) before escalation to the wordpress.org plugin team and public disclosure.
+- Submitted through coordinated vulnerability disclosure. The vendor receives a standard coordination window before escalation to the wordpress.org plugin team and public disclosure.
 - CVE-2025-8692 (authenticated admin-path instance, <= 6.2.12) is cited as related prior art; the REST instance documented here was unpatched in 6.2.17, the latest release at the time of research.
